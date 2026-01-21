@@ -55,6 +55,7 @@ def test_milvus_node_success(monkeypatch):
 
     monkeypatch.setattr("app.nodes.milvus.connections.connect", _fake_connect)
     monkeypatch.setattr("app.nodes.milvus.Collection", _fake_collection)
+    monkeypatch.setattr("app.nodes.milvus.utility.has_collection", lambda _name: True)
 
     config = MilvusConfig(
         host="127.0.0.1",
@@ -80,6 +81,7 @@ def test_milvus_node_success(monkeypatch):
         "user": "user",
         "password": "pass",
         "db_name": "default",
+        "timeout": 10,
     }
     assert calls["collection_name"] == "test_collection"
     assert calls["insert"] == {

@@ -38,11 +38,28 @@ def _create_client(config: LangfuseConfig) -> Optional[Langfuse]:
     if not _is_enabled(config):
         logger.info("langfuse disabled: missing config")
         return None
-    return Langfuse(
+    client = Langfuse(
         public_key=config.public_key,
         secret_key=config.secret_key,
         host=config.host,
     )
+    if not _client_supports_trace(client):
+        logger.warning("langfuse disabled: trace API not available in installed SDK")
+        return None
+    return client
+
+
+def _client_supports_trace(client: Langfuse) -> bool:
+    for attr_name in ("trace", "traces", "create_trace", "start_trace"):
+        value = getattr(client, attr_name, None)
+        if callable(value):
+            return True
+        if value is not None:
+            for method_name in ("create", "start"):
+                method = getattr(value, method_name, None)
+                if callable(method):
+                    return True
+    return False
 
 
 def _create_trace(client: Langfuse, *, trace_name: str, metadata: Optional[dict[str, Any]]) -> object:
