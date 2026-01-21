@@ -137,7 +137,7 @@ def test_serialize_search_result_handles_error():
 
     result = _serialize_search_result(BadResult())
 
-    assert isinstance(result, BadResult)
+    assert result == {}
 
 
 def test_serialize_search_result_passthrough():
@@ -145,4 +145,4 @@ def test_serialize_search_result_passthrough():
 
     payload = {"hits": []}
 
-    assert _serialize_search_result(payload) is payload
+    assert _serialize_search_result(payload) == payload

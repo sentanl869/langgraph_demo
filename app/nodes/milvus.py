@@ -18,12 +18,33 @@ _DEFAULT_INDEX_PARAMS = {
 
 
 def _serialize_search_result(result: Any) -> Any:
+    if result is None:
+        return None
+    if isinstance(result, (str, int, float, bool)):
+        return result
+    if isinstance(result, dict):
+        return {key: _serialize_search_result(value) for key, value in result.items()}
+    if isinstance(result, (list, tuple)):
+        return [_serialize_search_result(item) for item in result]
     if hasattr(result, "to_dict"):
         try:
-            return result.to_dict()
+            return _serialize_search_result(result.to_dict())
         except Exception:
-            return result
-    return result
+            pass
+    hit_id = getattr(result, "id", None)
+    distance = getattr(result, "distance", None)
+    if hit_id is not None or distance is not None:
+        payload = {"id": hit_id, "distance": distance}
+        entity = getattr(result, "entity", None)
+        if entity is not None:
+            payload["entity"] = _serialize_search_result(entity)
+        fields = getattr(result, "fields", None)
+        if fields is not None:
+            payload["fields"] = _serialize_search_result(fields)
+        return payload
+    if hasattr(result, "__dict__"):
+        return _serialize_search_result(result.__dict__)
+    return str(result)
 
 
 def _ensure_collection(name: Optional[str], *, dim: int) -> Collection:
