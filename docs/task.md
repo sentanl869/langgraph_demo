@@ -89,11 +89,11 @@
 - [ ] T10-10 文档完善：使用说明、配置说明、排错说明（TODO）
 
 ### M11 容器镜像构建支持
-- [ ] T11-1 明确镜像构建方案（基础镜像为 `ubuntu:24.04`、依赖安装策略、默认入口命令）（TODO）
-- [ ] T11-2 添加 `Dockerfile` 与 `.dockerignore`（TODO）
-- [ ] T11-3 更新容器构建与运行说明（补充到 `docs/run.md`）（TODO）
-- [ ] T11-4 本地验证 `docker build` 与 `docker run --env-file .env`（TODO）
-- [ ] T11-5 验证容器运行配置与 `langgraph dev/up` 一致（TODO）
+- [x] T11-1 明确镜像构建方案（基础镜像为 `ubuntu:24.04`、依赖安装策略、默认入口命令）（DONE）
+- [x] T11-2 添加 `Dockerfile` 与 `.dockerignore`（DONE）
+- [x] T11-3 更新容器构建与运行说明（补充到 `docs/run.md`）（DONE）
+- [x] T11-4 本地验证 `docker build` 与 `docker run --env-file .env`（DONE）
+- [x] T11-5 验证容器运行配置与 `langgraph dev/up` 一致（DONE）
 
 ## 依赖与阻塞项
 - 未明确版本与认证方式或 mem0 HTTP 接口细节时，节点实现可能阻塞（T0-1/T0-2/T0-3/T0-4/T0-5）。

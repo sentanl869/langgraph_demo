@@ -158,3 +158,15 @@
 - `build_graph` 的节点 wrapper 优先使用显式传入的 trace；未传入时在首个节点内惰性创建 trace 并写入上下文
 - trace metadata 读取 `configurable.thread_id`（缺省为 `default`），并在 `final` 节点结束后清理上下文
 - `app/langgraph_app.py` 仍导出编译后的 `Pregel` graph，避免 wrapper 导致类型校验失败
+
+## M11-1 容器镜像构建方案
+- 基础镜像：`ubuntu:24.04`
+- Python：使用系统包 `python3`（Ubuntu 24.04 默认 3.12），满足 `langgraph.json` 的版本要求
+- 依赖安装：容器内创建 `/opt/venv`，使用 `uv pip install -r requirements.txt` 安装运行依赖
+- 默认入口：`python -m app.main`，需要时可覆盖为 `langgraph dev --config langgraph.json`
+- 构建上下文：通过 `.dockerignore` 排除 `.env` 等敏感文件，避免密钥进入镜像
+
+## M11-2 容器验证与一致性
+- 本地完成 `docker build` 与 `docker run --env-file .env` 验证，镜像可启动
+- 容器运行依赖 `.env` 与 `langgraph.json`，与本地 `langgraph dev/up` 使用同一份配置
+- 运行时 mem0/Milvus 需外部服务可用；未启动时会返回连接失败（符合预期）

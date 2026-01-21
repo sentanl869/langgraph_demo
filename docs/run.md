@@ -39,6 +39,25 @@ python -m app.main
 - `LANGSMITH_API_KEY`（具备 LangGraph Cloud 访问权限）
 - `LANGGRAPH_CLOUD_LICENSE_KEY`
 
+## 容器镜像构建与运行
+> 基础镜像为 `ubuntu:24.04`，容器内使用 Python 3.12 运行。
+
+### 构建镜像
+```bash
+docker build -t langgraph-demo:local .
+```
+
+### 运行默认入口（python -m app.main）
+```bash
+docker run --rm --env-file .env langgraph-demo:local
+```
+
+### 运行 LangGraph CLI（可选）
+```bash
+docker run --rm --env-file .env langgraph-demo:local \
+  langgraph dev --config langgraph.json
+```
+
 ## 测试
 ```bash
 pytest

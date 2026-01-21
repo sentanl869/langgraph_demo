@@ -4,6 +4,7 @@ from typing import Any, Callable, Optional, TypedDict
 
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
+from langchain_core.runnables import RunnableConfig
 
 from app.config import AppConfig, CheckpointConfig
 from app.nodes.llm import run_llm_node
@@ -60,7 +61,10 @@ def build_graph(
         name: str,
         node_fn: Callable[[AgentState], dict[str, Any]],
     ) -> Callable[[AgentState], dict[str, Any]]:
-        def _wrapped(state: AgentState, config: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+        def _wrapped(
+            state: AgentState,
+            config: Optional[RunnableConfig] = None,
+        ) -> dict[str, Any]:
             active_trace = langfuse_trace or get_langfuse_trace()
             if active_trace is None:
                 active_trace, _ = ensure_langfuse_trace(
