@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shlex
 from dataclasses import dataclass
 from typing import Optional
@@ -77,6 +78,18 @@ def _normalize(value: Optional[str]) -> Optional[str]:
     return value
 
 
+_URL_SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*://")
+
+
+def _normalize_url(value: Optional[str]) -> Optional[str]:
+    value = _normalize(value)
+    if value is None:
+        return None
+    if _URL_SCHEME_RE.match(value):
+        return value
+    return f"http://{value}"
+
+
 def _get_env(name: str, cast=None) -> Optional[object]:
     value = _normalize(os.getenv(name))
     if value is None:
@@ -87,6 +100,10 @@ def _get_env(name: str, cast=None) -> Optional[object]:
         return cast(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(f"Invalid value for {name}: {value!r}") from exc
+
+
+def _get_env_url(name: str) -> Optional[str]:
+    return _normalize_url(os.getenv(name))
 
 
 def _parse_args(value: Optional[str]) -> list[str]:
@@ -109,13 +126,13 @@ def load_config() -> AppConfig:
         db_name=_get_env("MILVUS_DB_NAME"),
     )
     mem0 = Mem0Config(
-        server_url=_get_env("MEM0_SERVER_URL"),
+        server_url=_get_env_url("MEM0_SERVER_URL"),
         api_key=_get_env("MEM0_API_KEY"),
         user_id=_get_env("MEM0_USER_ID"),
     )
     llm = LLMConfig(
         api_key=_get_env("LLM_API_KEY"),
-        endpoint=_get_env("LLM_ENDPOINT"),
+        endpoint=_get_env_url("LLM_ENDPOINT"),
         model=_get_env("LLM_MODEL"),
         timeout=_get_env("LLM_TIMEOUT", cast=int),
         temperature=_get_env("LLM_TEMPERATURE", cast=float),
@@ -123,12 +140,12 @@ def load_config() -> AppConfig:
     langfuse = LangfuseConfig(
         public_key=_get_env("LANGFUSE_PUBLIC_KEY"),
         secret_key=_get_env("LANGFUSE_SECRET_KEY"),
-        host=_get_env("LANGFUSE_HOST"),
+        host=_get_env_url("LANGFUSE_HOST"),
         env=_get_env("LANGFUSE_ENV"),
     )
     mcp = MCPConfig(
         transport=_get_env("MCP_TRANSPORT"),
-        server_url=_get_env("MCP_SERVER_URL"),
+        server_url=_get_env_url("MCP_SERVER_URL"),
         tool_name=_get_env("MCP_TOOL_NAME"),
         api_key=_get_env("MCP_API_KEY"),
         command=_get_env("MCP_COMMAND"),

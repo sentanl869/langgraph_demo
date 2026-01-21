@@ -45,6 +45,36 @@ def _create_client(config: LangfuseConfig) -> Optional[Langfuse]:
     )
 
 
+def _create_trace(client: Langfuse, *, trace_name: str, metadata: Optional[dict[str, Any]]) -> object:
+    trace_method = getattr(client, "trace", None)
+    if callable(trace_method):
+        return trace_method(name=trace_name, metadata=metadata)
+    if trace_method is not None:
+        create_method = getattr(trace_method, "create", None)
+        if callable(create_method):
+            return create_method(name=trace_name, metadata=metadata)
+    for candidate in ("create_trace", "start_trace"):
+        method = getattr(client, candidate, None)
+        if callable(method):
+            return method(name=trace_name, metadata=metadata)
+    raise AttributeError("Langfuse client does not support trace creation")
+
+
+def _create_span(trace: object, *, span_name: str, metadata: Optional[dict[str, Any]]) -> Optional[object]:
+    span_method = getattr(trace, "span", None)
+    if callable(span_method):
+        return span_method(name=span_name, metadata=metadata)
+    if span_method is not None:
+        create_method = getattr(span_method, "create", None)
+        if callable(create_method):
+            return create_method(name=span_name, metadata=metadata)
+    for candidate in ("create_span", "start_span"):
+        method = getattr(trace, candidate, None)
+        if callable(method):
+            return method(name=span_name, metadata=metadata)
+    return None
+
+
 def start_langfuse_trace(
     *,
     config: LangfuseConfig,
@@ -56,8 +86,9 @@ def start_langfuse_trace(
         client = _create_client(config)
         if client is None:
             return None
-        return client.trace(
-            name=trace_name,
+        return _create_trace(
+            client,
+            trace_name=trace_name,
             metadata=_merge_metadata(config.env, metadata),
         )
     except Exception:  # noqa: BLE001 - surface as non-fatal for the agent run.
@@ -74,11 +105,9 @@ def start_langfuse_span(
     if trace is None:
         return None
     try:
-        span_method = getattr(trace, "span", None)
-        if span_method is None:
-            return None
-        return span_method(
-            name=span_name,
+        return _create_span(
+            trace,
+            span_name=span_name,
             metadata=metadata or None,
         )
     except Exception:  # noqa: BLE001 - keep agent running if langfuse fails.
@@ -149,12 +178,14 @@ def run_langfuse_trace(
                 "trace_id": None,
                 "span_id": None,
             }
-        trace = client.trace(
-            name=trace_name,
+        trace = _create_trace(
+            client,
+            trace_name=trace_name,
             metadata=_merge_metadata(config.env, metadata),
         )
-        span = trace.span(
-            name=span_name,
+        span = _create_span(
+            trace,
+            span_name=span_name,
             metadata=span_metadata or None,
         )
         end_langfuse_span(span)
@@ -162,7 +193,7 @@ def run_langfuse_trace(
         return {
             "status": "success",
             "trace_id": getattr(trace, "id", None),
-            "span_id": getattr(span, "id", None),
+            "span_id": getattr(span, "id", None) if span is not None else None,
         }
     except Exception as exc:  # noqa: BLE001 - want node to surface errors as data.
         logger.exception("langfuse trace failed")
