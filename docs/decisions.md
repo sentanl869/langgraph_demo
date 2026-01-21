@@ -170,3 +170,12 @@
 - 本地完成 `docker build` 与 `docker run --env-file .env` 验证，镜像可启动
 - 容器运行依赖 `.env` 与 `langgraph.json`，与本地 `langgraph dev/up` 使用同一份配置
 - 运行时 mem0/Milvus 需外部服务可用；未启动时会返回连接失败（符合预期）
+
+## M12-1 K8s 部署模式
+- 运行形态：Job（一次性执行），不要求服务型或 `langgraph up`
+- 入口命令：`python -m app.main`
+- 运行参数：使用 ConfigMap 注入 `prompt/mem0-query/mcp-args/thread-id` 等 CLI 入参
+- 密钥注入：Secret 通过 `kubectl create secret --from-env-file` 创建并在 Job 中引用
+
+## M12-2 K8s 验证方式
+- 需要连接可用集群才能完成 `kubectl apply` 验证；当前环境无集群，验证待执行

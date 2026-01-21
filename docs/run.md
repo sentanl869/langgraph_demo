@@ -58,6 +58,31 @@ docker run --rm --env-file .env langgraph-demo:local \
   langgraph dev --config langgraph.json
 ```
 
+## Kubernetes 部署（Job）
+> 仅支持 `python -m app.main` 入口，不要求 `langgraph up`。
+
+### 准备镜像
+- 确保 `k8s/job.yaml` 中的 `image` 指向可被集群拉取的镜像。
+
+### 创建 Secret（从 .env）
+```bash
+kubectl create secret generic langgraph-demo-env --from-env-file=.env
+```
+
+### 应用 ConfigMap 与 Job
+```bash
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/job.yaml
+```
+
+### 查看运行结果
+```bash
+kubectl logs job/langgraph-demo
+```
+
+### 修改运行参数
+- 编辑 `k8s/configmap.yaml` 中的 `AGENT_*` 字段后重新 `kubectl apply`。
+
 ## 测试
 ```bash
 pytest

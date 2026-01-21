@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: langgraph-demo
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: langgraph-demo
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: agent
+          image: langgraph-demo:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "app.main"]
+          args:
+            - "--prompt=$(AGENT_PROMPT)"
+            - "--mem0-query=$(AGENT_MEM0_QUERY)"
+            - "--mcp-args=$(AGENT_MCP_ARGS)"
+            - "--thread-id=$(AGENT_THREAD_ID)"
+          envFrom:
+            - configMapRef:
+                name: langgraph-demo-config
+            - secretRef:
+                name: langgraph-demo-env

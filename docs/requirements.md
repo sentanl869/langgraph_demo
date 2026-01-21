@@ -45,6 +45,15 @@
 - 需确保镜像中 Python 版本与 `langgraph.json` 中的 `python_version` 保持一致。
 - 镜像运行配置应与本地 `langgraph dev/up` 一致，避免环境差异导致行为不一致。
 
+### 1.7) Kubernetes 部署支持（新增）
+- 必须提供可直接在 Kubernetes 上部署的清单（建议放在 `k8s/` 目录），用于运行该 Agent。
+- 至少包含以下资源：
+  - `Job` 或 `CronJob`：运行容器镜像，支持可配置镜像仓库与 tag。
+  - `ConfigMap`/`Secret`：通过环境变量注入配置与密钥，禁止在清单中写入明文密钥。
+- 运行方式仅需支持 `python -m app.main` 作为容器启动命令，不要求支持 `langgraph up`。
+- 清单需支持通过环境变量或参数配置运行参数，避免重复维护多套配置。
+- 需提供最小化的部署说明（如 `kubectl create secret --from-env-file`、`kubectl apply -f k8s/`）。
+
 ### 2) 配置管理
 - 所有连接信息必须放在 `.env` 中，代码通过环境变量读取：
   - Milvus：地址、端口、用户名/密码（若有）、集合名/分区名等。
@@ -74,6 +83,7 @@
 - 最小化实现：避免过度封装，优先完成验证链路。
 - 开发方式：采用测试驱动开发（TDD）。实现流程必须为“先写测试，再写功能”；测试初次执行应失败，功能实现后测试应通过。
 - 可部署性：容器镜像构建过程可追溯、可复现，且不引入配置泄露风险。
+- 可部署性（K8s）：提供可复用的 Kubernetes 清单与说明，避免依赖手工配置。
 
 ## 目录与代码结构建议
 - `app/`：应用代码
@@ -112,6 +122,7 @@
 - `.env` 中修改配置后，无需改代码即可切换连接。
 - 任一服务不可用时，日志可明确指出失败节点与原因。
 - 可通过 `docker build` 构建出镜像，并能以 `--env-file .env` 的方式启动 Agent。
+- 可通过 Kubernetes 清单部署并运行 Agent（服务型或一次性方式均可），且配置通过 Secret/ConfigMap 注入。
 
 ## 开放问题
 - Milvus 与 mem0 的具体版本、认证方式与 SDK 版本要求。
@@ -121,6 +132,10 @@
 - langgraph CLI 的目标部署方式（本地、容器、或远端）与配置文件格式偏好（JSON/YAML）。
 - 容器镜像的构建策略（uv/pip）与默认入口命令的偏好。
 - 是否要求镜像支持 `langgraph up` 的构建流程或独立 `docker build` 即可。
+- Kubernetes 部署方式偏好（Job vs CronJob）与调度周期（若需）。
+- 是否需要 Ingress/网关暴露服务，以及目标端口与域名规范。
+- 是否要求提供 Helm/Kustomize 形式，或仅需原生 YAML。
+- Secret 的管理方式（手工创建、External Secrets、或集群托管方案）。
 
 ## 里程碑建议
 - M1：完成项目初始化（uv + pyproject + 目录结构）。
@@ -129,3 +144,4 @@
 - M4：完善日志、文档与示例配置。
 - M5：补齐 langgraph CLI 启动支持（dev/up 配置与文档）。
 - M6：补齐容器镜像构建支持（Dockerfile、构建与运行文档、验证）。
+- M7：补齐 Kubernetes 部署支持（清单、说明、验证）。

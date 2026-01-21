@@ -95,6 +95,13 @@
 - [x] T11-4 本地验证 `docker build` 与 `docker run --env-file .env`（DONE）
 - [x] T11-5 验证容器运行配置与 `langgraph dev/up` 一致（DONE）
 
+### M12 Kubernetes 部署支持
+- [x] T12-1 明确 K8s 部署模式（Job/CronJob）与入口命令（`python -m app.main`）（DONE）
+- [x] T12-2 添加 `k8s/` 清单（Job 或 CronJob、ConfigMap/Secret）（DONE）
+- [x] T12-3 支持通过环境变量/参数配置运行参数（DONE）
+- [x] T12-4 更新部署文档：Secret/ConfigMap 创建与 `kubectl apply` 流程（DONE）
+- [ ] T12-5 本地或测试集群验证部署（kind/minikube/任意集群）（BLOCKED：当前无可用集群/权限）
+
 ## 依赖与阻塞项
 - 未明确版本与认证方式或 mem0 HTTP 接口细节时，节点实现可能阻塞（T0-1/T0-2/T0-3/T0-4/T0-5）。
 - 输出格式未确认时，汇总输出与日志格式可能需返工（T0-6）。
@@ -102,6 +109,8 @@
 - langgraph CLI 配置格式与启动方式未确认时，CLI 支持任务可能阻塞（T9-1）。
 - `langgraph up` 缺少许可证相关环境变量时无法启动（T9-4）。
 - 容器镜像构建依赖 Docker/Podman 可用，且需确定基础镜像与入口策略（T11-1）。
+- K8s 部署模式与入口命令未确认时，清单与验证会阻塞（T12-1）。
+- 集群环境/镜像仓库不可用时，K8s 验证可能阻塞（T12-5）。
 
 ## 交付检查清单
 - [ ] 单次命令可运行 Agent
@@ -114,3 +123,4 @@
 - [ ] `.env` 修改后无需改代码即可切换配置
 - [ ] 失败时能定位到具体节点与原因
 - [ ] 可通过 `docker build` 构建容器镜像并运行 Agent
+- [ ] 可通过 `k8s/` 清单在 Kubernetes 上部署并运行 Agent
