@@ -1,0 +1,3 @@
+pytest
+pytest-cov
+langgraph-cli[inmem]

@@ -1,0 +1,10 @@
+{
+  "python_version": "3.12",
+  "dependencies": [
+    "."
+  ],
+  "graphs": {
+    "validation_agent": "./app/langgraph_app.py:graph"
+  },
+  "env": "./.env"
+}

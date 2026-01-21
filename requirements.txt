@@ -1,0 +1,8 @@
+langgraph
+langgraph-cli
+langfuse
+mcp
+pymilvus
+requests
+python-dotenv
+openai
