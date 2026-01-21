@@ -4,10 +4,13 @@ import asyncio
 import logging
 from typing import Any, Optional
 
+import requests
+
 from app.config import MCPConfig
 
 
 logger = logging.getLogger(__name__)
+_JSONRPC_TIMEOUT_SECONDS = 10
 
 
 def _build_headers(api_key: Optional[str]) -> dict[str, str]:
@@ -58,7 +61,64 @@ def _load_http_client():
             from mcp.client.http import http_client
         except ImportError as exc:
             raise RuntimeError("mcp http client is not available") from exc
-        return ClientSession, http_client
+    return ClientSession, http_client
+
+
+def _jsonrpc_request(
+    session: requests.Session,
+    server_url: str,
+    method: str,
+    params: Optional[dict[str, Any]],
+    request_id: int,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "jsonrpc": "2.0",
+        "method": method,
+        "id": request_id,
+    }
+    if params is not None:
+        payload["params"] = params
+    response = session.post(server_url, json=payload, timeout=_JSONRPC_TIMEOUT_SECONDS)
+    response.raise_for_status()
+    data = response.json()
+    if not isinstance(data, dict):
+        raise ValueError("MCP JSON-RPC response is not an object")
+    if "error" in data:
+        raise RuntimeError(f"MCP JSON-RPC error: {data['error']}")
+    return data
+
+
+def _call_mcp_tool_jsonrpc(
+    tool_name: str,
+    tool_args: dict[str, Any],
+    config: MCPConfig,
+) -> Any:
+    if not config.server_url:
+        raise ValueError("MCP_SERVER_URL is required for jsonrpc transport")
+
+    session = requests.Session()
+    session.headers.update({"Content-Type": "application/json"})
+    session.headers.update(_build_headers(config.api_key))
+
+    _jsonrpc_request(
+        session,
+        config.server_url,
+        "initialize",
+        {
+            "protocolVersion": "0.1.0",
+            "clientInfo": {"name": "langgraph-demo", "version": "1.0.0"},
+        },
+        request_id=1,
+    )
+    _jsonrpc_request(session, config.server_url, "tools/list", None, request_id=2)
+    result = _jsonrpc_request(
+        session,
+        config.server_url,
+        "tools/call",
+        {"name": tool_name, "arguments": tool_args},
+        request_id=3,
+    )
+    return result.get("result")
 
 
 async def _call_mcp_tool_async(
@@ -98,6 +158,14 @@ def _call_mcp_tool(
     tool_args: dict[str, Any],
     config: MCPConfig,
 ) -> Any:
+    transport = (config.transport or "").lower()
+    if transport == "stdio" and not config.command and config.server_url:
+        logger.warning(
+            "mcp transport stdio missing MCP_COMMAND; falling back to jsonrpc with MCP_SERVER_URL"
+        )
+        transport = "jsonrpc"
+    if transport in {"jsonrpc", "http-jsonrpc", "rpc"}:
+        return _call_mcp_tool_jsonrpc(tool_name, tool_args, config)
     return _run_async(_call_mcp_tool_async(tool_name, tool_args, config))
 
 

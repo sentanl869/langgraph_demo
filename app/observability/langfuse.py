@@ -46,13 +46,17 @@ def _create_client(config: LangfuseConfig) -> Optional[Langfuse]:
 
 
 def _create_trace(client: Langfuse, *, trace_name: str, metadata: Optional[dict[str, Any]]) -> object:
-    trace_method = getattr(client, "trace", None)
-    if callable(trace_method):
-        return trace_method(name=trace_name, metadata=metadata)
-    if trace_method is not None:
-        create_method = getattr(trace_method, "create", None)
-        if callable(create_method):
-            return create_method(name=trace_name, metadata=metadata)
+    for attr_name in ("trace", "traces"):
+        trace_method = getattr(client, attr_name, None)
+        if callable(trace_method):
+            return trace_method(name=trace_name, metadata=metadata)
+        if trace_method is not None:
+            create_method = getattr(trace_method, "create", None)
+            if callable(create_method):
+                return create_method(name=trace_name, metadata=metadata)
+            start_method = getattr(trace_method, "start", None)
+            if callable(start_method):
+                return start_method(name=trace_name, metadata=metadata)
     for candidate in ("create_trace", "start_trace"):
         method = getattr(client, candidate, None)
         if callable(method):
@@ -61,13 +65,17 @@ def _create_trace(client: Langfuse, *, trace_name: str, metadata: Optional[dict[
 
 
 def _create_span(trace: object, *, span_name: str, metadata: Optional[dict[str, Any]]) -> Optional[object]:
-    span_method = getattr(trace, "span", None)
-    if callable(span_method):
-        return span_method(name=span_name, metadata=metadata)
-    if span_method is not None:
-        create_method = getattr(span_method, "create", None)
-        if callable(create_method):
-            return create_method(name=span_name, metadata=metadata)
+    for attr_name in ("span", "spans"):
+        span_method = getattr(trace, attr_name, None)
+        if callable(span_method):
+            return span_method(name=span_name, metadata=metadata)
+        if span_method is not None:
+            create_method = getattr(span_method, "create", None)
+            if callable(create_method):
+                return create_method(name=span_name, metadata=metadata)
+            start_method = getattr(span_method, "start", None)
+            if callable(start_method):
+                return start_method(name=span_name, metadata=metadata)
     for candidate in ("create_span", "start_span"):
         method = getattr(trace, candidate, None)
         if callable(method):
